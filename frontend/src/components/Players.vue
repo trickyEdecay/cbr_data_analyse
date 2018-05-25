@@ -1,19 +1,17 @@
 <template>
     <div>
         <Panel title="参与准确率排行" description="玩家答题的准确率排行榜，计算方式是 玩家答对题目的数量÷玩家参与题目的数量">
-            <div :class="{'player-list-container':true,'all':expandControl.correctRateRank}">
+            <players-ranking>
                 <player-row v-for="(player,index) of highestCorrectRatePlayers" :sort="index+1" :playerName="player.name">{{(player.correctRate*100).toFixed(2)+"%"}}</player-row>
-            </div>
-            <div class="expand-btn" @click="expandControl.correctRateRank = !expandControl.correctRateRank">{{expandControl.correctRateRank==false?"↓ 展开列表":"↑ 收起列表"}}</div>
+            </players-ranking>
             <statistics>
                 <statistics-item title="平均准确率" :data="averageCorrectRate*100+'%'"></statistics-item>
             </statistics>
         </Panel>
         <Panel title="题目参与数最多" description="根据玩家参与的题目数进行排序">
-            <div :class="{'player-list-container':true,'all':expandControl.joinMostQuestionCountRank}">
+            <players-ranking>
                 <player-row v-for="(player,index) of JoinMostQuestionCountPlayers" :sort="index+1" :playerName="player.name">{{player.joinQuestionCount+"题"}}</player-row>
-            </div>
-            <div class="expand-btn" @click="expandControl.joinMostQuestionCountRank = !expandControl.joinMostQuestionCountRank">{{expandControl.joinMostQuestionCountRank==false?"↓ 展开列表":"↑ 收起列表"}}</div>
+            </players-ranking>
         </Panel>
     </div>
 </template>
@@ -23,6 +21,7 @@
     import qs from 'qs';
     import axios from 'axios';
     import Panel from "./Panel";
+    import PlayersRanking from '@/components/PlayersRanking';
     import PlayerRow from '@/components/PlayerRow';
     import Statistics from '@/components/Statistics';
     import StatisticsItem from '@/components/StatisticsItem';
@@ -31,16 +30,11 @@
 
     export default {
         name: "Players",
-        components:{Panel,PlayerRow,Statistics,StatisticsItem},
+        components:{PlayersRanking, Panel,PlayerRow,Statistics,StatisticsItem},
         data(){
             return {
                 // 全场平均准确率
                 averageCorrectRate: 0,
-                //用来控制面板开合
-                expandControl:{
-                    correctRateRank:false,
-                    joinMostQuestionCountRank:false,
-                },
                 // 所有玩家的数据
                 players:[],
                 // 最高准确率玩家
@@ -127,7 +121,7 @@
         cursor: pointer;
         user-select: none;
         text-align: center;
-        
+
         &:hover{
             background: #efefef;
             color: #555;
