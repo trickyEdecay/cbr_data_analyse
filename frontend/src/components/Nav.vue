@@ -45,6 +45,8 @@
         padding: 24px;
         font-weight: bold;
         align-items: center;
+        cursor: pointer;
+        user-select: none;
     }
     .nav-button.active {
         display: flex;

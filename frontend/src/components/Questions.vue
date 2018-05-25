@@ -5,45 +5,30 @@
         </Panel>
         <Panel title="题目参与人数" description="统计了每一个题目有多少人参与">
             <div id="playerAmountChart" class="chart-container"></div>
-            <div class="chart-statistic">
-                <div class="chart-statistic-item">
-                    <h4>账号注册数</h4>
-                    <h1>{{playerAmount}}</h1>
-                </div>
-
-                <div class="chart-statistic-item">
-                    <h4>最多参与数</h4>
-                    <h1>{{questionMostPlay_playerAmount}}</h1>
-                </div>
-
-                <div class="chart-statistic-item">
-                    <h4>最少参与数</h4>
-                    <h1>{{questionFewPlay_playerAmount}}</h1>
-                </div>
-            </div>
+                <statistics>
+                    <statistics-item title="账号注册数" :data="playerAmount"></statistics-item>
+                    <statistics-item title="最多参与数" :data="questionMostPlay_playerAmount"></statistics-item>
+                    <statistics-item title="最少参与数" :data="questionFewPlay_playerAmount"></statistics-item>
+                </statistics>
         </Panel>
         <Panel title="题目加减分设定" description="每一道题目的加分与减分设定">
             <div id="scoreSettingChart" class="chart-container"></div>
-            <div class="chart-statistic">
-                <div class="chart-statistic-item">
-                    <h4>全部答对总分</h4>
-                    <h1>{{scoreIfAllCorrect}}</h1>
-                </div>
-
-                <div class="chart-statistic-item">
-                    <h4>平均加分</h4>
-                    <h1>{{averageAddScore}}</h1>
-                </div>
-
-                <div class="chart-statistic-item">
-                    <h4>平均扣分</h4>
-                    <h1>{{averageMinusScore}}</h1>
-                </div>
-            </div>
+                <statistics>
+                    <statistics-item title="全部答对总分" :data="scoreIfAllCorrect"></statistics-item>
+                    <statistics-item title="平均加分" :data="averageAddScore"></statistics-item>
+                    <statistics-item title="平均扣分" :data="averageMinusScore"></statistics-item>
+                </statistics>
         </Panel>
-        <!--<Panel title="题目答题时间设定" description="每一道题目的答题准确率">-->
-            <!--<div id="correctRateChart" class="chart-container"></div>-->
-        <!--</Panel>-->
+        <Panel title="题目答题时间设定" description="每一个题目都有一个答题时限，如果玩家没能在答题时限内把题目完成了，则视为超时，相关指标还有一道题目的总字数，影响用户的阅读时间。">
+            <div id="timeSettingChart" class="chart-container"></div>
+            <statistics>
+                <statistics-item title="平均超时人数" :data="averageTimeOutPlayerAmount"></statistics-item>
+                <statistics-item tips="完全没有超时情况的题目数量" title="完美时设" :data="perfectTimeSettingCount"></statistics-item>
+            </statistics>
+        </Panel>
+        <Panel title="题目幸运儿设定" description="每道题目都规定了能被加分的人数上限">
+            <div id="luckyPlayerChart" class="chart-container"></div>
+        </Panel>
         <Panel title="题目列表">
             <ul class="question-list">
                 <li v-for="question of questionsPack"><span><span class="question-sort">{{question.sort}}</span>{{question.question}}</span></li>
@@ -57,8 +42,11 @@
     import qs from 'qs';
     import axios from 'axios';
     import Panel from "./Panel";
+    import Statistics from '@/components/Statistics';
+    import StatisticsItem from '@/components/StatisticsItem';
     import echarts from 'echarts';
     import merge from 'webpack-merge';
+    import utils from '@/lib/utils';
 
 
     // 准确率图表
@@ -67,51 +55,15 @@
     let playerAmountChart;
     // 加减分设定图表
     let scoreSettingChart;
+    // 题目答题时间设定图表
+    let timeSettingChart;
+    // 题目幸运儿设定图表
+    let luckyPlayerChart;
 
-    // 防抖函数
-    const throttle = function(fn, delay, mustRunDelay){
-        var timer = null;
-        var t_start;
-        return function(){
-            var context = this, args = arguments, t_curr = +new Date();
-            clearTimeout(timer);
-            if(!t_start){
-                t_start = t_curr;
-            }
-            if(t_curr - t_start >= mustRunDelay){
-                fn.apply(context, args);
-                t_start = t_curr;
-            }
-            else {
-                timer = setTimeout(function(){
-                    fn.apply(context, args);
-                }, delay);
-            }
-        };
-    };
-
-    const max = function (arr){
-        let max=arr[0];
-        for(let item of arr){
-            if(max<item){
-                max = item;
-            }
-        }
-        return max;
-    };
-    const min = function (arr){
-        let min=arr[0];
-        for(let item of arr){
-            if(min>item){
-                min = item;
-            }
-        }
-        return min;
-    };
 
     export default {
         name: "Questions",
-        components: {Panel},
+        components: {Panel,Statistics,StatisticsItem},
         data(){
             return{
                 // 问题包
@@ -129,7 +81,11 @@
                 // 平均加分
                 averageAddScore:0,
                 // 平均减分
-                averageMinusScore:0
+                averageMinusScore:0,
+                // 平均超时人数
+                averageTimeOutPlayerAmount:0,
+                // 完全没有超时情况的题目数量
+                perfectTimeSettingCount:0
             }
         },
         methods:{
@@ -226,6 +182,64 @@
                         // }
                     }
                 }));
+                // 初始化 加减分设定图表
+                timeSettingChart = echarts.init(document.getElementById('timeSettingChart'));
+                // 绘制图表
+                timeSettingChart.setOption(merge(chartOption,{
+                    grid:{
+                        top:36,
+                        bottom:20,
+                        left:36,
+                        right:80
+                    },
+                    tooltip: {
+                        trigger: 'axis',
+                        formatter: function(datas) {
+                            let res = `题目 ${datas[0].name} <br/>`;
+                            let val;
+                            for(var i = 0, length = datas.length; i < length; i++) {
+                                val = `${datas[i].value}`;
+                                res += `${datas[i].seriesName}: ${val} <br/>`;
+                            }
+                            return res;
+                        }
+
+                        // formatter: function(data)
+                        // {
+                        //     return `题目 ${data.name}<br/>
+                        //             ${data.seriesName}：${data.value}分`;
+                        // }
+                    }
+                }));
+                // 初始化 加减分设定图表
+                luckyPlayerChart = echarts.init(document.getElementById('luckyPlayerChart'));
+                // 绘制图表
+                luckyPlayerChart.setOption(merge(chartOption,{
+                    grid:{
+                        top:36,
+                        bottom:20,
+                        left:36,
+                        right:36
+                    },
+                    tooltip: {
+                        trigger: 'axis',
+                        formatter: function(datas) {
+                            let res = `题目 ${datas[0].name} <br/>`;
+                            let val;
+                            for(var i = 0, length = datas.length; i < length; i++) {
+                                val = `${datas[i].value}`;
+                                res += `${datas[i].seriesName}: ${val} <br/>`;
+                            }
+                            return res;
+                        }
+
+                        // formatter: function(data)
+                        // {
+                        //     return `题目 ${data.name}<br/>
+                        //             ${data.seriesName}：${data.value}分`;
+                        // }
+                    }
+                }));
             },
 
             // 获取页面填充内容
@@ -256,17 +270,32 @@
                     let addScoreArray = [];
                     // 题目扣了多少分数组
                     let minusScoreArray = [];
+                    // 题目时间设定
+                    let timeSettingArray = [];
+                    // 答题超时用户数量数组
+                    let timeoutPlayerAmountArray = [];
+                    // 题目字数统计数组
+                    let questionWordCountArray = [];
+                    // 题目幸运儿人数数组
+                    let luckyPlayerAmountArray = [];
+                    // 每一道题的答对人数数组
+                    let correctPlayerAmountArray = [];
                     self.questionsPack.forEach((question)=>{
                         questionSortArray.push(question.sort);
                         correctRateArray.push( Math.round(question.correctPlayerAmount / question.playerAmount * 10000)/10000);
                         playerAmountArray.push(question.playerAmount);
                         addScoreArray.push(question.addscore);
                         minusScoreArray.push(-question.minusscore);
+                        timeSettingArray.push(question.availabletime);
+                        timeoutPlayerAmountArray.push(question.timeoutPlayerAmount);
+                        questionWordCountArray.push(question.question.length+question.a.length+question.b.length+question.c.length+question.d.length);
+                        luckyPlayerAmountArray.push(question.peoplelimit);
+                        correctPlayerAmountArray.push(question.correctPlayerAmount);
                     });
 
                     // 计算最多参与人数与最少参与人数
-                    self.questionMostPlay_playerAmount = max(playerAmountArray);
-                    self.questionFewPlay_playerAmount = min(playerAmountArray);
+                    self.questionMostPlay_playerAmount = utils.max(playerAmountArray);
+                    self.questionFewPlay_playerAmount = utils.min(playerAmountArray);
 
                     // 计算题目设定的一个人全对能拿多少分
                     for(let score of addScoreArray){
@@ -276,8 +305,25 @@
                     for(let score of minusScoreArray){
                         self.scoreIfAllWrong += score;
                     }
+                    // 平均加扣分
                     self.averageAddScore = Math.round(self.scoreIfAllCorrect / addScoreArray.length * 100) /100;
                     self.averageMinusScore = Math.round(self.scoreIfAllWrong / minusScoreArray.length * 100) /100;
+
+                    // 没有超时情况的题目数
+                    let noTimeOutQuestionsCount = 0;
+                    // 所有题目超时人数总和
+                    let timeoutPlayerSum = 0;
+                    for(let questionTimeOutCount of timeoutPlayerAmountArray){
+                        timeoutPlayerSum+=questionTimeOutCount;
+                        if(questionTimeOutCount === 0){
+                            noTimeOutQuestionsCount++;
+                        }
+                    }
+
+                    // 平均超时人数
+                    self.averageTimeOutPlayerAmount = Math.round(timeoutPlayerSum / timeoutPlayerAmountArray.length * 100) /100;
+                    // 没有超时情况的题目数
+                    self.perfectTimeSettingCount = noTimeOutQuestionsCount;
 
 
                     // 绘制图表
@@ -335,6 +381,151 @@
 
                         }]
                     });
+                    // 绘制图表
+                    timeSettingChart.setOption({
+                        legend:{
+                            show:true
+                        },
+                        xAxis: {
+                            data: questionSortArray,
+                            axisPointer:{
+                                type:"shadow",
+                                shadowStyle:{
+                                    color:'rgba(233,233,233,.3)'
+                                }
+                            }
+                        },
+                        yAxis:[
+                            {
+                                type: 'value',
+                                name: '答题允许时间',
+                                min: 0,
+                                max: 'dataMax',
+                                position: 'left',
+                                axisLine: {
+                                    lineStyle: {
+
+                                    }
+                                },
+                                axisLabel: {
+                                    formatter: '{value}s'
+                                }
+                            },{
+                                type: 'value',
+                                name: '超时',
+                                min: 0,
+                                max: 'dataMax',
+                                splitLine:{
+                                    show:false
+                                },
+                                position: 'right',
+                                // axisLine:{show:false},
+                                // axisTick:{show:false},
+                                axisLabel: {
+                                    show: true
+                                }
+                            },{
+                                type: 'value',
+                                name: '字数',
+                                nameTextStyle:{
+                                    align:'center'
+                                },
+                                min: 0,
+                                max: 'dataMax',
+                                splitLine:{
+                                    show:false
+                                },
+                                offset: 40,
+                                position: 'right',
+                                // axisLine:{show:false},
+                                // axisTick:{show:false},
+                                axisLabel: {
+                                    show: true
+                                }
+                            }
+                        ],
+                        series: [{
+                            type:'bar',
+                            name:"答题允许时间",
+                            data: timeSettingArray,
+                            itemStyle:{
+                                color:['#d93c50'],
+                                barBorderRadius: [100,100,0,0]
+                            },
+                            barMaxWidth:10
+                        },{
+                            type:'bar',
+                            name:"超时",
+                            yAxisIndex: 1,
+                            data: timeoutPlayerAmountArray,
+                            itemStyle:{
+                                color:['#8e5ab4'],
+                                barBorderRadius: [100,100,0,0]
+                            },
+                            barMaxWidth:10
+                        },{
+                            type:'bar',
+                            name:"字数",
+                            yAxisIndex: 2,
+                            data: questionWordCountArray,
+                            itemStyle:{
+                                color:['#de66a2'],
+                                barBorderRadius: [100,100,0,0]
+                            },
+                            barMaxWidth:10
+                        }]
+                    });
+                    // 绘制图表
+                    luckyPlayerChart.setOption({
+                        legend:{
+                            show:true
+                        },
+                        xAxis: {
+                            data: questionSortArray,
+                            axisPointer:{
+                                type:"shadow",
+                                shadowStyle:{
+                                    color:'rgba(233,233,233,.3)'
+                                }
+                            }
+                        },
+                        yAxis:[
+                            {
+                                type: 'value',
+                                name: '幸运儿设定',
+                                min: 0,
+                                max: 'dataMax',
+                                position: 'left',
+                                axisLine: {
+                                    lineStyle: {
+
+                                    }
+                                },
+                                axisLabel: {
+                                    formatter: '{value}'
+                                }
+                            }
+                        ],
+                        series: [{
+                            type:'bar',
+                            name:"幸运儿人数",
+                            data: luckyPlayerAmountArray,
+                            itemStyle:{
+                                color:['#d93c50'],
+                                barBorderRadius: [100,100,0,0]
+                            },
+                            barMaxWidth:10
+                        },{
+                            type:'bar',
+                            name:"答对人数",
+                            data: correctPlayerAmountArray,
+                            itemStyle:{
+                                color:['#8e5ab4'],
+                                barBorderRadius: [100,100,0,0]
+                            },
+                            barMaxWidth:10
+                        }]
+                    });
 
 
 
@@ -354,10 +545,12 @@
         mounted (){
             this.initCharts();
 
-            window.onresize = throttle(()=>{
+            window.onresize = utils.throttle(()=>{
                 correctRateChart.resize();
                 playerAmountChart.resize();
                 scoreSettingChart.resize();
+                timeSettingChart.resize();
+                luckyPlayerChart.resize();
             },50,200);
         }
     }
@@ -401,43 +594,4 @@
         font-weight: bold;
     }
 }
-
-    .chart-statistic{
-
-
-        margin: 30px 0;
-        box-sizing: border-box;
-        display: flex;
-        width: 100%;
-        flex-wrap: wrap;
-
-        align-items: center;
-        justify-content: center;
-
-        .chart-statistic-item{
-            transition: all .14s ease-in-out;
-            min-width: 120px;
-            height: 100px;
-            text-align: center;
-            border-radius: 10px;
-            /*background: #fff;*/
-            padding: 20px;
-
-
-            &:hover{
-                box-shadow: 0 0 20px 5px rgba(217,60,80,.08);
-            }
-            h4{
-                user-select: none;
-                color: #bbb;
-                font-weight: normal;
-                margin: 0px;
-            }
-
-            h1{
-                margin: 20px;
-            }
-        }
-
-    }
 </style>
