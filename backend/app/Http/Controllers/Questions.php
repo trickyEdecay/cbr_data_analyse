@@ -12,6 +12,8 @@ class Questions extends BaseController
     //
 
     public function getQuestionsPack(){
+
+
         $questions = Question::orderBy('sort')->get();
         foreach($questions as &$question){
             $question['playerAmount'] = count(QuestionBuffer::questionId($question['id'])->get());
@@ -22,6 +24,8 @@ class Questions extends BaseController
     }
 
     public function getQuestionsPageFill(){
+
+
         $questions = Question::orderBy('sort')->get();
         foreach($questions as &$question){
             $question['playerAmount'] = count(QuestionBuffer::questionId($question['id'])->get());

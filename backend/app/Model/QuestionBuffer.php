@@ -21,6 +21,10 @@ class QuestionBuffer extends Model
         return $query->where('questionid','=',$questionId);
     }
 
+    public function scopePlayerId($query, $playerId){
+        return $query->where('peopleid','=',$playerId);
+    }
+
     public function scopeChoose($query,$choose){
         return $query->where('choose','=',$choose);
     }
