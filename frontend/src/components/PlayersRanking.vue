@@ -1,6 +1,6 @@
 <template>
     <div>
-        <div :class="{'player-list-container':true,'all':isExpanded}">
+        <div :class="{'player-list-container':true}" :style="{'height':isExpanded?'481px':'170px'}">
             <slot></slot>
         </div>
         <div class="expand-btn" @click="isExpanded = !isExpanded">{{isExpanded==false?"↓ 展开列表":"↑ 收起列表"}}</div>

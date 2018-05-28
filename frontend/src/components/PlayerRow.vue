@@ -1,7 +1,7 @@
 <template>
     <div class="container">
         <div :class="{'sort':true,'sort-1':sort==1,'sort-2':sort==2,'sort-3':sort==3}">{{sort}}</div>
-        <div class="name">{{playerName}}</div>
+        <router-link  tag="div" class="name" :to="'player-profile/'+playerId">{{playerName}}</router-link>
         <div class="info"><slot></slot></div>
     </div>
 </template>
@@ -14,6 +14,9 @@
                 require:true
             },
             playerName:{
+                require:true
+            },
+            playerId:{
                 require:true
             }
         }
@@ -65,6 +68,14 @@
         flex: 1;
         justify-content: flex-end;
         align-self: flex-end;
+    }
+
+    .name{
+        cursor: pointer;
+
+        &:hover{
+            text-decoration: underline;
+        }
     }
 }
 </style>
