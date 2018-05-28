@@ -21,3 +21,4 @@ $app->get('foo',[ "middleware" => "old", function () use ($app) {
 
 $app->get('/questionsPageFill','Questions@getQuestionsPageFill');
 $app->get('/playersPageFill','Players@getPlayersPageFill');
+$app->get('/playerPageFill/{id}','Players@getPlayerPageFill');

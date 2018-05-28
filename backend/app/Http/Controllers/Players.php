@@ -10,7 +10,7 @@ use Laravel\Lumen\Routing\Controller as BaseController;
 class Players extends BaseController
 {
 
-
+    // 读取玩家统计页面信息
     public function getPlayersPageFill(){
 
         $players = Player::lastActiveYear('2018')->get();
@@ -26,6 +26,21 @@ class Players extends BaseController
         return response()->json([
             "players"=>$players,
             "playerAmount"=>$playerAmount
+        ]);
+    }
+
+    // 获取某个具体玩家的数据页面信息
+    public function getPlayerPageFill($playerId){
+        $player = Player::playerId($playerId)->first();
+
+        $questions = Question::orderBy('sort')->get();
+        foreach($questions as &$question){
+
+        }
+
+        return response()->json([
+            "player"=>$player,
+            "questions"=>$questions
         ]);
     }
 }

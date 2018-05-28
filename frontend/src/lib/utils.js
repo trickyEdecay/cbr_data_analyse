@@ -28,7 +28,7 @@ export default {
     max: function (arr) {
         let max = arr[0];
         for (let item of arr) {
-            if (max < item) {
+            if (parseInt(max) < parseInt(item)) {
                 max = item;
             }
         }
@@ -38,10 +38,20 @@ export default {
     min: function (arr) {
         let min = arr[0];
         for (let item of arr) {
-            if (min > item) {
+            if (parseInt(max) > parseInt(item)) {
                 min = item;
             }
         }
         return min;
-    }
+    },
+    // 求一个数组的平均值
+    average: function(arr){
+        let sum = 0;
+        for(let item of arr){
+            sum += parseInt(item);
+        }
+        return sum/arr.length;
+    },
+    // 生成由 start 到 end 构成的数组
+    rangeArray:(start, end) => Array(end - start + 1).fill(0).map((v, i) => i + start)
 }

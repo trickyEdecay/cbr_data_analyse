@@ -20,4 +20,8 @@ class Player extends Model
     public function scopeLastActiveYear($query,$year){
         return $query->where('lastactiveyear','=',$year);
     }
+
+    public function scopePlayerId($query,$playerId){
+        return $query->where('id','=',$playerId);
+    }
 }
