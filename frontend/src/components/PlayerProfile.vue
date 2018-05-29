@@ -42,6 +42,14 @@
             </statistics>
         </Panel>
 
+        <Panel title="答题情况统计">
+            <ul class="question-list">
+                <li v-for="question of questions">
+                    <span><span class="question-sort">{{question.sort}}</span>{{question.question}}</span>
+                </li>
+            </ul>
+        </Panel>
+
     </div>
 </template>
 
@@ -75,7 +83,9 @@
                 historyScore:[],
                 highestScore:0,
                 averageScore:0,
-                historyRanking:[]
+                historyRanking:[],
+                //问题列表
+                questions:[]
             }
         },
         methods:{
@@ -154,6 +164,7 @@
                     self.averageScore = (Math.round(utils.average(self.historyScore)*100)/100).toFixed(2);
                     self.lowestRanking = utils.max(self.historyRanking);
                     self.averageRanking = (Math.round(utils.average(self.historyRanking)*100)/100).toFixed(2);
+                    self.questions = response.data.questions;
 
                     // 玩家分数变化图表
                     scoreChangeChart.setOption({
@@ -342,6 +353,41 @@
                     transform: scale(.8);
                 }
             }
+        }
+    }
+
+    .question-list{
+        user-select: none;
+        padding-left: 0;
+        list-style: none;
+
+        li{
+            display: flex;
+            padding: 12px;
+            align-items: center;
+            border-top: 1px dashed #efefef;
+
+            &:last-of-type{
+                border-bottom: 1px dashed #efefef;
+            }
+
+            &:hover{
+                background: #fafafa;
+            }
+        }
+
+        .question-sort{
+            display: inline-block;
+            background: @main-color;
+            border-radius:100px;
+            color: #fff;
+            width: 22px;
+            height: 22px;
+            margin-right: 8px;
+            text-align: center;
+            font-size: 12px;
+            line-height: 24px;
+            font-weight: bold;
         }
     }
 </style>
