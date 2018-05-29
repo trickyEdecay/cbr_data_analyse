@@ -35,7 +35,16 @@ class Players extends BaseController
 
         $questions = Question::orderBy('sort')->get();
         foreach($questions as &$question){
-
+            $question['playerAmount'] = count(QuestionBuffer::questionId($question['id'])->get());
+            $buffer = QuestionBuffer::questionId($question['id'])->playerId($playerId)->first();
+            if($buffer == null){
+                $question['playerState'] = "unjoin";
+            }else{
+                $question['playerState'] = $buffer['state'];
+                if($buffer['state'] == "done"){
+                    $question['isCorrect'] = $buffer['choose'] == $question['randomtrue'];
+                }
+            }
         }
 
         return response()->json([

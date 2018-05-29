@@ -45,7 +45,16 @@
         <Panel title="答题情况统计">
             <ul class="question-list">
                 <li v-for="question of questions">
-                    <span><span class="question-sort">{{question.sort}}</span>{{question.question}}</span>
+                    <div class="question-container">
+                        <div class="question-sort">{{question.sort}}</div><div class="question">{{question.question}}</div>
+                    </div>
+                    <div class="question-info">
+                        <div class="answer-state correct">{{question.playerStateText}}</div>
+                        <img class="icon" title="最强黑马" src="../assets/honor_blackHorse.png"></img>
+                        <img class="icon" title="手速最快" src="../assets/honor_fast.png"></img>
+                        <img class="icon" title="最先答对" src="../assets/honor_firstCorrect.png"></img>
+                        <img class="icon" title="弹无虚发" src="../assets/honor_highHitRate.png"></img>
+                    </div>
                 </li>
             </ul>
         </Panel>
@@ -83,6 +92,8 @@
                 historyScore:[],
                 highestScore:0,
                 averageScore:0,
+                lowestRanking:0,
+                averageRanking:0,
                 historyRanking:[],
                 //问题列表
                 questions:[]
@@ -164,7 +175,29 @@
                     self.averageScore = (Math.round(utils.average(self.historyScore)*100)/100).toFixed(2);
                     self.lowestRanking = utils.max(self.historyRanking);
                     self.averageRanking = (Math.round(utils.average(self.historyRanking)*100)/100).toFixed(2);
-                    self.questions = response.data.questions;
+                    self.questions = response.data.questions.filter((question)=>{
+                        if(question.playerAmount>0){
+                            // 计算玩家的状态文本
+                            switch (question.playerState){
+                                case "unjoin":
+                                    question.playerStateText = "未参与";
+                                    break;
+                                case "timeout":
+                                case "joined":
+                                    question.playerStateText = "已超时";
+                                    break;
+                                case "done":
+                                    if(question.isCorrect){
+                                        question.playerStateText = "答对了";
+                                    }else {
+                                        question.playerStateText = "答错了";
+                                    }
+                                    break;
+                            }
+
+                            return question;
+                        }
+                    });
 
                     // 玩家分数变化图表
                     scoreChangeChart.setOption({
@@ -365,6 +398,7 @@
             display: flex;
             padding: 12px;
             align-items: center;
+            justify-content: space-between;
             border-top: 1px dashed #efefef;
 
             &:last-of-type{
@@ -374,20 +408,73 @@
             &:hover{
                 background: #fafafa;
             }
+
+            .question-container{
+                display: flex;
+                align-items: center;
+                flex: 1;
+
+                .question-sort{
+                    background: @main-color;
+                    border-radius:100px;
+                    color: #fff;
+                    width: 22px;
+                    height: 22px;
+                    margin-right: 8px;
+                    text-align: center;
+                    font-size: 12px;
+                    line-height: 24px;
+                    font-weight: bold;
+                }
+                .question{
+                    flex: 1;
+                }
+            }
+            .question-info{
+                display: flex;
+                justify-content: flex-end;
+                justify-self: flex-end;
+                width: 200px;
+            }
+
+            // 问题回答状态
+            .answer-state{
+                padding: 4px 8px;
+                border-radius: 100px;
+                color: #fff;
+                font-size: 10px;
+                margin-right: 4px;
+                &.correct{
+                    background: #39a551;
+                }
+            }
+
+            .icon{
+                height: 20px;
+                margin-right: 4px;
+
+                &:last-of-type{
+                    margin-right: 0;
+                }
+            }
+
+            @media(max-width: 600px){
+                &{
+                    display: block;
+
+                    .question-container{
+                        width: 100%;
+                    }
+
+                    .question-info{
+                        width: 100%;
+                        margin-top: 20px;
+                        justify-content: flex-start;
+                    }
+                }
+            }
         }
 
-        .question-sort{
-            display: inline-block;
-            background: @main-color;
-            border-radius:100px;
-            color: #fff;
-            width: 22px;
-            height: 22px;
-            margin-right: 8px;
-            text-align: center;
-            font-size: 12px;
-            line-height: 24px;
-            font-weight: bold;
-        }
+
     }
 </style>
