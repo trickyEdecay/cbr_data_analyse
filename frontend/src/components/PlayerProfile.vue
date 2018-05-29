@@ -49,7 +49,12 @@
                         <div class="question-sort">{{question.sort}}</div><div class="question">{{question.question}}</div>
                     </div>
                     <div class="question-info">
-                        <div class="answer-state correct">{{question.playerStateText}}</div>
+                        <div :class="{'answer-state':true ,
+                                      'correct':question.playerStateText == '答对了',
+                                      'wrong':question.playerStateText == '答错了',
+                                      'timeout':question.playerStateText == '已超时',
+                                      'unjoin':question.playerStateText == '未参与',
+                                      }">{{question.playerStateText}}</div>
                         <img class="icon" title="最强黑马" src="../assets/honor_blackHorse.png"></img>
                         <img class="icon" title="手速最快" src="../assets/honor_fast.png"></img>
                         <img class="icon" title="最先答对" src="../assets/honor_firstCorrect.png"></img>
@@ -161,13 +166,14 @@
                     self.wrongCount = response.data.player.wrongcount;
                     self.rightCount = response.data.player.rightcount;
                     self.correctRate = Math.round(self.rightCount/(self.rightCount+self.wrongCount)*100);
-                    self.historyScore = response.data.player.historyscore.split(",").filter((score)=>{
-                        if(score != ""){
+                    self.historyScore = response.data.player.historyscore.split(",").filter((score,index)=>{
+                        // index > 0 是为了筛选掉玩家刚来到教室时候的默认数据
+                        if(score != "" && index>0){
                             return true;
                         }
                     });
-                    self.historyRanking = response.data.player.historyranking.split(",").filter((ranking)=>{
-                        if(ranking != ""){
+                    self.historyRanking = response.data.player.historyranking.split(",").filter((ranking,index)=>{
+                        if(ranking != "" && index>0){
                             return true;
                         }
                     });
@@ -223,7 +229,7 @@
                     // 玩家排名变化图表
                     rankingChangeChart.setOption({
                         xAxis: {
-                            data: utils.rangeArray(0,self.historyRanking.length-1),
+                            data: utils.rangeArray(0,self.historyScore.length-1),
                         },
                         yAxis:[
                             {
@@ -446,6 +452,15 @@
                 margin-right: 4px;
                 &.correct{
                     background: #39a551;
+                }
+                &.wrong{
+                    background: @main-color;
+                }
+                &.timeout{
+                    background: #fac900;
+                }
+                &.unjoin{
+                    background: #888;
                 }
             }
 
