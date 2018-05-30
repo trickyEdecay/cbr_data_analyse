@@ -78,7 +78,7 @@ class Players extends BaseController
                 $table->integer('question_id');
                 $table->integer('right_count');
                 $table->integer('wrong_count');
-                $table->float('correct_rate',4,2);
+                $table->float('correct_rate',5,2);
                 $table->integer('score');
                 $table->integer('delta_score')->comment('这一次的分数减去上一次的分数');
                 $table->integer('ranking');
@@ -150,7 +150,7 @@ class Players extends BaseController
 
                     $correctRate = 0;
                     if($rightCount+$wrongCount > 0){
-                        $correctRate = round($rightCount/($rightCount+$wrongCount),2);
+                        $correctRate = round($rightCount/($rightCount+$wrongCount),4)*100;
                     }
 
                     $nowScore = $historyScoreArray[$i];
