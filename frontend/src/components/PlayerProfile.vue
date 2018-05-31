@@ -176,10 +176,16 @@
                 // 绘制图表
                 scoreChangeChart.setOption(merge(chartOption,{
                     tooltip: {
-                        formatter: function(data)
-                        {
-                            return `${data.name}题：${data.value} 分`;
-                        }
+                        trigger: 'axis',
+                        formatter: function(datas) {
+                            let res = `题目 ${datas[0].name} <br/>`;
+                            let val;
+                            for(var i = 0, length = datas.length; i < length; i++) {
+                                val = `${datas[i].value}分`;
+                                res += `${datas[i].seriesName}: ${val} <br/>`;
+                            }
+                            return res;
+                        },
                     }
                 }));
                 // 初始化 排名变化图表
@@ -187,10 +193,16 @@
                 // 绘制图表
                 rankingChangeChart.setOption(merge(chartOption,{
                     tooltip: {
-                        formatter: function(data)
-                        {
-                            return `${data.name}题：${data.value} 名`;
-                        }
+                        trigger: 'axis',
+                        formatter: function(datas) {
+                            let res = `题目 ${datas[0].name} <br/>`;
+                            let val;
+                            for(var i = 0, length = datas.length; i < length; i++) {
+                                val = `${datas[i].value}名`;
+                                res += `${datas[i].seriesName}: ${val} <br/>`;
+                            }
+                            return res;
+                        },
                     }
                 }));
                 // 初始化 验证码输入时延图表
@@ -198,10 +210,16 @@
                 // 绘制图表
                 captchaDelayChart.setOption(merge(chartOption,{
                     tooltip: {
-                        formatter: function(data)
-                        {
-                            return `${data.name}题：比手速最快的玩家慢了 ${Math.abs(data.value)} 秒`;
-                        }
+                        trigger: 'axis',
+                        formatter: function(datas) {
+                            let res = `题目 ${datas[0].name} <br/>`;
+                            let val;
+                            for(var i = 0, length = datas.length; i < length; i++) {
+                                val = `比手速最快的玩家慢 ${Math.abs(datas[i].value)}秒`;
+                                res += `${datas[i].seriesName}: ${val} <br/>`;
+                            }
+                            return res;
+                        },
                     }
                 }));
                 // 初始化 答题用时图表
