@@ -28,6 +28,9 @@ class QuestionBuffer extends Model
     public function scopeChoose($query,$choose){
         return $query->where('choose','=',$choose);
     }
+    public function scopeDoesntChoose($query,$choose){
+        return $query->where('choose','<>',$choose)->whereNotNull('choose');
+    }
 
     public function scopeTimeout($query){
         return $query->where('state','=','timeout');

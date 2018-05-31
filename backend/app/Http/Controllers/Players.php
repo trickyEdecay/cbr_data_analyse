@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Model\AnalysisPlayerStage;
+use App\Model\AnalysisQuestionsStatistic;
 use App\Model\CaptchaInputTime;
 use App\Model\Player;
 use App\Model\Question;
@@ -33,8 +35,13 @@ class Players extends BaseController
 
     // 获取某个具体玩家的数据页面信息
     public function getPlayerPageFill($playerId){
+
+        $this->computePlayersStage();
+        Questions::computeQuestionsStatistic();
+
         $player = Player::playerId($playerId)->first();
 
+        $stageInfo = AnalysisPlayerStage::playerId($playerId)->orderBy('question_sort')->get();
         $questions = Question::orderBy('sort')->get();
         foreach($questions as &$question){
             $question['playerAmount'] = count(QuestionBuffer::questionId($question['id'])->get());
@@ -45,28 +52,36 @@ class Players extends BaseController
                 $question['playerState'] = $buffer['state'];
                 if($buffer['state'] == "done"){
                     $question['isCorrect'] = $buffer['choose'] == $question['randomtrue'];
+                    $question['playerChoose'] = $buffer['choose'];
                 }
                 // 最快手速玩家id
-                $question['theFastPlayerId'] = QuestionBuffer::questionId($question['id'])->orderBy('time','asc')->first()['peopleid'];
+                $fastPlayerId = AnalysisQuestionsStatistic::questionId($question['id'])->first()['fast_player_id'];
                 // 最先答对玩家id
-                $question['theFirstCorrectPlayerId'] = QuestionBuffer::questionId($question['id'])->choose($question['randomtrue'])->orderBy('done-time','asc')->first()['peopleid'];
-                // 最先答对玩家id
-                $question['theFirstCorrectPlayerId'] = QuestionBuffer::questionId($question['id'])->choose($question['randomtrue'])->orderBy('done-time','asc')->first()['peopleid'];
-                // 计算那一题的最强黑马
+                $firstCorrectPlayerId = AnalysisQuestionsStatistic::questionId($question['id'])->first()['first_correct_player_id'];
+                // 最强黑马玩家id
+                $blackHorsePlayerId = AnalysisQuestionsStatistic::questionId($question['id'])->first()['black_horse_player_id'];
+                // 准确率最高玩家id
+                $highHitRatePlayerId = AnalysisQuestionsStatistic::questionId($question['id'])->first()['high_hit_rate_player_id'];
 
+                $question['isFastPlayer'] = $fastPlayerId == $playerId;
+                $question['isFirstCorrectPlayer'] = $firstCorrectPlayerId == $playerId;
+                $question['isBlackHorsePlayer'] = $blackHorsePlayerId == $playerId;
+                $question['isHighHitRatePlayer'] = $highHitRatePlayerId == $playerId;
+                $question['deltaScore'] = AnalysisPlayerStage::questionId($question['id'])->playerId($playerId)->first()['delta_score'];
             }
         }
 
-        $this->computePlayersStage();
+
 
         return response()->json([
             "player"=>$player,
+            "stageInfo"=>$stageInfo,
             "questions"=>$questions
         ]);
     }
 
     // 计算所有玩家在每一道题目时的数据
-    public function computePlayersStage(){
+    public static function computePlayersStage(){
         $analysisPlayersStageTableName = 'analysis_player_stage';
 
         // 判断玩家数据分析表在不在，如果不在的话，就分析并创建这么一个表
@@ -76,6 +91,7 @@ class Players extends BaseController
                 $table->string('name');
                 $table->integer('player_id');
                 $table->integer('question_id');
+                $table->integer('question_sort');
                 $table->integer('right_count');
                 $table->integer('wrong_count');
                 $table->float('correct_rate',5,2);
@@ -164,12 +180,14 @@ class Players extends BaseController
                         $deltaRanking= $historyRankingArray[$i]-$historyRankingArray[$i-1];
                         $questionId = $questions[$i]['id'];
                     }
+                    $questionSort = $questions[$i]['sort'];
 
                     // 将玩家的每一道题的数据插入到数据库中
                     app('db')->table($analysisPlayersStageTableName)->insert([
                         'name' => $player['name'],
                         'player_id' => $player['id'],
                         'question_id' => $questionId,
+                        'question_sort' => $questionSort,
                         'right_count' => $rightCount,
                         'wrong_count' => $wrongCount,
                         'correct_rate' => $correctRate,

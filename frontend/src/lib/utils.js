@@ -38,7 +38,7 @@ export default {
     min: function (arr) {
         let min = arr[0];
         for (let item of arr) {
-            if (parseInt(max) > parseInt(item)) {
+            if (parseInt(min) > parseInt(item)) {
                 min = item;
             }
         }
