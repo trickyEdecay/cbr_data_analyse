@@ -28,6 +28,7 @@ export default {
     max: function (arr) {
         let max = arr[0];
         for (let item of arr) {
+            if(isNaN(parseInt(item))){continue;}
             if (parseInt(max) < parseInt(item)) {
                 max = item;
             }
@@ -38,6 +39,7 @@ export default {
     min: function (arr) {
         let min = arr[0];
         for (let item of arr) {
+            if(isNaN(parseInt(item))){continue;}
             if (parseInt(min) > parseInt(item)) {
                 min = item;
             }
@@ -47,10 +49,12 @@ export default {
     // 求一个数组的平均值
     average: function(arr){
         let sum = 0;
+        let count = arr.length; // 除数，有时候一些数据可能是无效的，平均值的分母要减掉这些数据
         for(let item of arr){
+            if(isNaN(parseInt(item))){count--;continue;}
             sum += parseInt(item);
         }
-        return sum/arr.length;
+        return sum/count;
     },
     // 生成由 start 到 end 构成的数组
     rangeArray:(start, end) => Array(end - start + 1).fill(0).map((v, i) => i + start)

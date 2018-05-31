@@ -42,12 +42,20 @@
             </statistics>
         </Panel>
 
-        <Panel title="进入答题时延曲线" description="记录了该玩家每一次答题时，距离第一个输入验证码的玩家的时间">
+        <Panel title="进入答题时延曲线" description="记录了该玩家提交验证码的时间与手速最快的玩家之间的对比">
             <div id="captchaDelayChart" class="chart-container"></div>
-            <!--<statistics>-->
-                <!--<statistics-item title="最低排名" :data="lowestRanking"></statistics-item>-->
-                <!--<statistics-item title="平均排名" :data="averageRanking"></statistics-item>-->
-            <!--</statistics>-->
+            <statistics>
+                <statistics-item title="最慢手速" :data="slowestDelay"></statistics-item>
+                <statistics-item title="平均手速" :data="averageDelay"></statistics-item>
+            </statistics>
+        </Panel>
+
+        <Panel title="答题用时曲线" description="记录了该玩家答每一道题时从阅读题目到选择提交选项所花费的时间">
+            <div id="answerQuestionDurationChart" class="chart-container"></div>
+            <statistics>
+                <statistics-item title="用时最长" :data="longestDuration"></statistics-item>
+                <statistics-item title="平均用时" :data="averageDuration"></statistics-item>
+            </statistics>
         </Panel>
 
         <Panel title="答题情况统计">
@@ -98,6 +106,7 @@
     let scoreChangeChart;
     let rankingChangeChart;
     let captchaDelayChart;
+    let answerQuestionDurationChart;
 
     export default {
         name: "PlayerProfile",
@@ -124,7 +133,15 @@
                 unjoinCount:0,
                 achievementCount:0,
                 // 答错题目中，最喜欢选的选项
-                mostLikeChosen:''
+                mostLikeChosen:'',
+                // 最慢手速
+                slowestDelay:0,
+                // 平均手速
+                averageDelay:0,
+                // 用时最久
+                longestDuration: 0,
+                // 平均用时
+                averageDuration: 0
             }
         },
         methods:{
@@ -187,6 +204,23 @@
                         }
                     }
                 }));
+                // 初始化 答题用时图表
+                answerQuestionDurationChart = echarts.init(document.getElementById('answerQuestionDurationChart'));
+                // 绘制图表
+                answerQuestionDurationChart.setOption(merge(chartOption,{
+                    tooltip: {
+                        trigger: 'axis',
+                        formatter: function(datas) {
+                            let res = `题目 ${datas[0].name} <br/>`;
+                            let val;
+                            for(var i = 0, length = datas.length; i < length; i++) {
+                                val = `${datas[i].value}秒`;
+                                res += `${datas[i].seriesName}: ${val} <br/>`;
+                            }
+                            return res;
+                        },
+                    }
+                }));
             },
             getPageFill(){
                 let self = this;
@@ -217,7 +251,10 @@
                     self.averageRanking = (Math.round(utils.average(self.historyRanking)*100)/100).toFixed(2);
                     // 用来记录玩家答错时选了ABCD哪个选项多少次
                     let chooseCount = [0,0,0,0];
+                    // 题目的限制时间数组
+                    let questionAvailableTimeArray = [];
                     self.questions = response.data.questions.filter((question)=>{
+                        questionAvailableTimeArray.push(question.availabletime);
                         if(question.playerAmount>0){
                             // 计算玩家的状态文本
                             switch (question.playerState){
@@ -247,14 +284,53 @@
                                 chooseCount[playerChoose.charCodeAt()-65]++;
                             }
 
-                            return question;
+                            return true;
                         }
                     });
                     // 验证码时延数组
                     let captchaDelayArray = [];
+                    // 答题用时数组
+                    let answerQuestionDurationArray = [];
+                    // 场均分数数组
+                    let allPlayersAverageScoreArray = [];
+                    // 场均排名数组
+                    let allPlayersAverageRankingArray = [];
+                    // 场均输入验证码时延数组
+                    let allPlayersAverageCaptchaDelayArray = [];
+                    // 场均答题用时数组
+                    let allPlayersAverageAnswerTimeArray = [];
+                    // 初始化数组，避免出现有些时候没有数据导致bug
+                    for(let i =0;i<self.historyScore.length;i++){
+                        captchaDelayArray.push('-');
+                        answerQuestionDurationArray.push('-');
+                        allPlayersAverageScoreArray.push('-');
+                        allPlayersAverageRankingArray.push('-');
+                        allPlayersAverageCaptchaDelayArray.push('-');
+                        allPlayersAverageAnswerTimeArray.push('-');
+                    }
                     response.data.stageInfo.forEach((stage,index)=>{
-                        captchaDelayArray.push(stage.captcha_input_delay);
+                        captchaDelayArray[index]=stage.captcha_input_delay;
+                        if(stage.question_state != 'timeout' && stage.question_state != 'joined'){
+                            let joinQuestionTime = new Date(stage.join_question_time).getTime()/1000;
+                            let questionDoneTime = new Date(stage.question_done_time).getTime()/1000;
+                            answerQuestionDurationArray[index]=questionDoneTime-joinQuestionTime;
+                        }
+
+
                     });
+                    response.data.questionsStatistic.forEach((questionsStatistic,index)=>{
+                        allPlayersAverageScoreArray[index] = questionsStatistic.average_player_score;
+                        allPlayersAverageRankingArray[index] = questionsStatistic.average_player_ranking;
+                        allPlayersAverageCaptchaDelayArray[index] = questionsStatistic.average_player_captcha_delay;
+                        allPlayersAverageAnswerTimeArray[index] = questionsStatistic.average_player_answer_time;
+                    });
+                    self.slowestDelay = Math.abs(utils.min(captchaDelayArray)).toFixed(2);
+                    self.averageDelay = Math.abs(utils.average(captchaDelayArray)).toFixed(2);
+                    self.longestDuration = utils.max(answerQuestionDurationArray);
+                    self.averageDuration = utils.average(answerQuestionDurationArray).toFixed(2);
+
+
+
 
                     // 计算玩家在答错的情况下最喜欢选的选项
                     self.mostLikeChosen = String.fromCharCode(((chooseCount)=>{
@@ -270,6 +346,9 @@
 
                     // 玩家分数变化图表
                     scoreChangeChart.setOption({
+                        legend:{
+                            show:true
+                        },
                         xAxis: {
                             data: utils.rangeArray(0,self.historyScore.length-1),
                         },
@@ -286,11 +365,21 @@
                             itemStyle:{
                                 color:['#d93c50']
                             }
+                        },{
+                            type:'line',
+                            name:"场均分数",
+                            data: allPlayersAverageScoreArray,
+                            itemStyle:{
+                                color:['#8e5ab455']
+                            }
                         }]
                     });
 
                     // 玩家排名变化图表
                     rankingChangeChart.setOption({
+                        legend:{
+                            show:true
+                        },
                         xAxis: {
                             data: utils.rangeArray(0,self.historyScore.length-1),
                         },
@@ -307,11 +396,21 @@
                             itemStyle:{
                                 color:['#d93c50']
                             }
+                        },{
+                            type:'line',
+                            name:"场均排名",
+                            data: allPlayersAverageRankingArray,
+                            itemStyle:{
+                                color:['#8e5ab455']
+                            }
                         }]
                     });
 
                     // 验证码输入时延图表
                     captchaDelayChart.setOption({
+                        legend:{
+                            show:true
+                        },
                         xAxis: {
                             data: utils.rangeArray(0,self.historyScore.length-1),
                         },
@@ -327,6 +426,52 @@
                             data: captchaDelayArray,
                             itemStyle:{
                                 color:['#d93c50']
+                            }
+                        },{
+                            type:'line',
+                            name:"场均时延",
+                            data: allPlayersAverageCaptchaDelayArray,
+                            itemStyle:{
+                                color:['#8e5ab455']
+                            }
+                        }]
+                    });
+                    // 答题用时图表
+                    answerQuestionDurationChart.setOption({
+                        legend:{
+                            show:true
+                        },
+                        xAxis: {
+                            data: utils.rangeArray(0,self.historyScore.length-1),
+                        },
+                        yAxis:[
+                            {
+                                type: 'value',
+                                min: 0
+                            }
+                        ],
+                        series: [{
+                            type:'line',
+                            name:"用时",
+                            data: answerQuestionDurationArray,
+                            itemStyle:{
+                                color:['#d93c50']
+                            }
+                        },{
+                            type:'line',
+                            name:"题目规定时长",
+                            data: questionAvailableTimeArray,
+                            itemStyle:{
+                                color:['#d93c5033']
+                            },
+                            lineStyle:{
+                            }
+                        },{
+                            type:'line',
+                            name:"场均用时",
+                            data: allPlayersAverageAnswerTimeArray,
+                            itemStyle:{
+                                color:['#8e5ab455']
                             }
                         }]
                     });
@@ -348,6 +493,7 @@
                 scoreChangeChart.resize();
                 rankingChangeChart.resize();
                 captchaDelayChart.resize();
+                answerQuestionDurationChart.resize();
             },50,200);
         }
     }

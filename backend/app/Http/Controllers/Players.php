@@ -42,6 +42,7 @@ class Players extends BaseController
         $player = Player::playerId($playerId)->first();
 
         $stageInfo = AnalysisPlayerStage::playerId($playerId)->orderBy('question_sort')->get();
+        $questionsStatistic = AnalysisQuestionsStatistic::orderBy('question_sort')->get();
         $questions = Question::orderBy('sort')->get();
         foreach($questions as &$question){
             $question['playerAmount'] = count(QuestionBuffer::questionId($question['id'])->get());
@@ -76,6 +77,7 @@ class Players extends BaseController
         return response()->json([
             "player"=>$player,
             "stageInfo"=>$stageInfo,
+            "questionsStatistic"=>$questionsStatistic,
             "questions"=>$questions
         ]);
     }
@@ -176,12 +178,11 @@ class Players extends BaseController
                     if($i==0){
                         $deltaScore = 0;
                         $deltaRanking = 0;
-                        $questionId =  -1;
                     }else{
                         $deltaScore= $historyScoreArray[$i]-$historyScoreArray[$i-1];
                         $deltaRanking= $historyRankingArray[$i]-$historyRankingArray[$i-1];
-                        $questionId = $questions[$i]['id'];
                     }
+                    $questionId = $questions[$i]['id'];
                     $questionSort = $questions[$i]['sort'];
 
                     // 将玩家的每一道题的数据插入到数据库中

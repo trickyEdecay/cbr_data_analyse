@@ -51,6 +51,7 @@ class Questions extends BaseController
             app('db')->getSchemaBuilder()->create($analysisQuestionsTableName, function (Blueprint $table) {
                 $table->increments('id');
                 $table->integer('question_id');
+                $table->integer('question_sort');
                 $table->integer('player_amount');
                 $table->integer('correct_player_amount');
                 $table->integer('wrong_player_amount');
@@ -86,6 +87,7 @@ class Questions extends BaseController
                     continue;
                 }
                 $question_id = $question['id'];
+                $question_sort = $question['sort'];
                 $playerAmount = QuestionBuffer::questionId($question['id'])->count();
                 $correctPlayerAmount = QuestionBuffer::questionId($question['id'])->choose($question['randomtrue'])->count();
                 $wrongPlayerAmount = QuestionBuffer::questionId($question['id'])->doesntChoose($question['randomtrue'])->count();
@@ -93,7 +95,7 @@ class Questions extends BaseController
                 $unjoinPlayerAmount = count($players)-$playerAmount;
                 $averagePlayersScore = AnalysisPlayerStage::questionId($question['id'])->avg('score');
                 $averagePlayersRanking = AnalysisPlayerStage::questionId($question['id'])->avg('ranking');
-                $averagePlayersAnswerTime = QuestionBuffer::selectRaw("avg(`done-time`-`time`) as answer_time")->questionId($question['id'])->first()['answer_time'];
+                $averagePlayersAnswerTime = QuestionBuffer::selectRaw("avg(`done-time`-`time`) as answer_time")->where('state','done')->questionId($question['id'])->first()['answer_time'];
                 $averagePlayersCaptchaDelay = AnalysisPlayerStage::questionId($question['id'])->avg('captcha_input_delay');
                 $maxPlayerScore = AnalysisPlayerStage::questionId($question['id'])->max('score');
                 $minPlayerScore = AnalysisPlayerStage::questionId($question['id'])->min('score');
@@ -118,6 +120,7 @@ class Questions extends BaseController
 
                 app('db')->table($analysisQuestionsTableName)->insert([
                     'question_id' => $question_id,
+                    'question_sort' => $question_sort,
                     'player_amount' => $playerAmount,
                     'correct_player_amount' => $correctPlayerAmount,
                     'wrong_player_amount' => $wrongPlayerAmount,
