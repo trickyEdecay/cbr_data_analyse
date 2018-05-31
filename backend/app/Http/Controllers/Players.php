@@ -152,7 +152,9 @@ class Players extends BaseController
                         // 记录验证码相关资料
                         $captchaInfo = CaptchaInputTime::questionId($questions[$i]['id'])->playerId($player['id'])->first();
                         $captchaInputTime = $captchaInfo['idcinputtime'];
-                        $captchaInputDelay = $captchaInfo['delay'];
+                        $captchaFirstPlayerInputTime = CaptchaInputTime::questionId($questions[$i]['id'])->oldest('idcinputtime')->first()['idcinputtime'];
+                        $timeStampOfFirstPlayer = strtotime($captchaFirstPlayerInputTime);
+                        $captchaInputDelay = $timeStampOfFirstPlayer-strtotime($captchaInputTime);
 
                         // 当玩家有选择东西的时候才能计算答对或答错
                         if($playerChoose != null && $playerChoose != ""){

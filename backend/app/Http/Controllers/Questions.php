@@ -94,14 +94,14 @@ class Questions extends BaseController
                 $averagePlayersScore = AnalysisPlayerStage::questionId($question['id'])->avg('score');
                 $averagePlayersRanking = AnalysisPlayerStage::questionId($question['id'])->avg('ranking');
                 $averagePlayersAnswerTime = QuestionBuffer::selectRaw("avg(`done-time`-`time`) as answer_time")->questionId($question['id'])->first()['answer_time'];
-                $averagePlayersCaptchaDelay = CaptchaInputTime::questionId($question['id'])->avg('delay');
+                $averagePlayersCaptchaDelay = AnalysisPlayerStage::questionId($question['id'])->avg('captcha_input_delay');
                 $maxPlayerScore = AnalysisPlayerStage::questionId($question['id'])->max('score');
                 $minPlayerScore = AnalysisPlayerStage::questionId($question['id'])->min('score');
                 $maxPlayerRanking = AnalysisPlayerStage::questionId($question['id'])->max('ranking');
                 $minPlayerRanking = AnalysisPlayerStage::questionId($question['id'])->min('ranking');
                 $maxPlayerCaptchaDelay = CaptchaInputTime::questionId($question['id'])->min('delay');
-                $fastPlayerId = QuestionBuffer::questionId($question['id'])->latest('time')->first()['peopleid'];
-                $firstCorrectPlayerId = QuestionBuffer::questionId($question['id'])->choose($question['randomtrue'])->latest('done-time')->first()['peopleid'];
+                $fastPlayerId = QuestionBuffer::questionId($question['id'])->oldest('time')->first()['peopleid'];
+                $firstCorrectPlayerId = QuestionBuffer::questionId($question['id'])->choose($question['randomtrue'])->oldest('done-time')->first()['peopleid'];
                 // 如果不存在最强黑马玩家就是-1
                 $blackHorsePlayerId = -1;
                 $tempBuilder = AnalysisPlayerStage::questionId($question['id'])->where('delta_ranking','>',60);
