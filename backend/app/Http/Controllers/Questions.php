@@ -95,7 +95,7 @@ class Questions extends BaseController
                 $unjoinPlayerAmount = count($players)-$playerAmount;
                 $averagePlayersScore = AnalysisPlayerStage::questionId($question['id'])->avg('score');
                 $averagePlayersRanking = AnalysisPlayerStage::questionId($question['id'])->avg('ranking');
-                $averagePlayersAnswerTime = QuestionBuffer::selectRaw("avg(`done-time`-`time`) as answer_time")->where('state','done')->questionId($question['id'])->first()['answer_time'];
+                $averagePlayersAnswerTime = QuestionBuffer::selectRaw("avg(unix_timestamp(`done-time`)-unix_timestamp(`time`)) as answer_time")->where('state','done')->questionId($question['id'])->first()['answer_time'];
                 $averagePlayersCaptchaDelay = AnalysisPlayerStage::questionId($question['id'])->avg('captcha_input_delay');
                 $maxPlayerScore = AnalysisPlayerStage::questionId($question['id'])->max('score');
                 $minPlayerScore = AnalysisPlayerStage::questionId($question['id'])->min('score');
