@@ -1,5 +1,6 @@
 <template>
     <div>
+        <search-box placeholder="搜索姓名/手机号"></search-box>
         <Panel title="获奖名单" description="全场下来能够拿到奖金的玩家">
             <players-ranking>
                 <player-row v-for="(player,index) of honorPlayers" :sort="index+1" :playerName="player.name" :playerId="player.id">{{"¥"+player.prize}}</player-row>
@@ -47,6 +48,7 @@
     import axios from 'axios';
     import Panel from "./Panel";
     import PlayersRanking from '@/components/PlayersRanking';
+    import SearchBox from '@/components/SearchBox';
     import PlayerRow from '@/components/PlayerRow';
     import Statistics from '@/components/Statistics';
     import StatisticsItem from '@/components/StatisticsItem';
@@ -60,7 +62,7 @@
 
     export default {
         name: "Players",
-        components:{PlayersRanking, Panel,PlayerRow,Statistics,StatisticsItem},
+        components:{PlayersRanking, Panel,PlayerRow,Statistics,StatisticsItem,SearchBox},
         data(){
             return {
                 // 奖金数量
